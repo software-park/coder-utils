@@ -170,8 +170,8 @@ node dist/index.js
 
 ```bash
 # 빌드
-npm run build
+pnpm run build
 
 # 개발 모드로 실행
-npm run prepare
+pnpm run prepare
 ```
