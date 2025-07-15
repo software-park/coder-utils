@@ -1,6 +1,6 @@
 # Coder Utils
 
-개발자를 위한 유틸리티 모음집으로, GitHub API 연동과 Pull Request 관리를 위한 도구들을 제공합니다.
+Coder 서비스를 통한 작업 자동화를 위한 유틸리티 모음집으로, GitHub API 연동과 Pull Request 관리를 위한 도구들을 제공합니다.
 
 ## 프로젝트 구조
 
