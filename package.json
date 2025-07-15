@@ -1,0 +1,14 @@
+{
+  "name": "@softwarepark/coder-utils",
+  "version": "1.0.0",
+  "description": "",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "pnpm run -r build"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.11.1"
+}
