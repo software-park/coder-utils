@@ -15,7 +15,10 @@ const octokit = new Octokit({
   authStrategy: createAppAuth,
   auth: {
     appId: process.env.GITHUB_APP_ID,
-    privateKey: process.env.GITHUB_APP_PRIVATE_KEY,
+    privateKey: Buffer.from(
+      process.env.GITHUB_APP_PRIVATE_KEY_BASE64 ?? "",
+      "base64"
+    ).toString("utf-8"),
     installationId: process.env.GITHUB_APP_INSTALLATION_ID,
   },
 });

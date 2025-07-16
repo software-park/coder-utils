@@ -49,12 +49,14 @@ export async function githubRequest(
     ] = `Bearer ${process.env.GITHUB_PERSONAL_ACCESS_TOKEN}`;
   } else if (
     process.env.GITHUB_APP_ID &&
-    process.env.GITHUB_APP_PRIVATE_KEY &&
+    process.env.GITHUB_APP_PRIVATE_KEY_BASE64 &&
     process.env.GITHUB_APP_INSTALLATION_ID
   ) {
     headers["Authorization"] = `Bearer ${await generateGithubAppToken(
       process.env.GITHUB_APP_ID,
-      process.env.GITHUB_APP_PRIVATE_KEY,
+      Buffer.from(process.env.GITHUB_APP_PRIVATE_KEY_BASE64, "base64").toString(
+        "utf-8"
+      ),
       process.env.GITHUB_APP_INSTALLATION_ID
     )}`;
   }
