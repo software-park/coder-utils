@@ -13,7 +13,7 @@ interface StateData {
  * 상태 파일 경로를 생성합니다.
  */
 export function getStateFilePath(owner: string, repo: string, pullNumber: number): string {
-  return join(process.cwd(), `.pr-watcher-${owner}-${repo}-${pullNumber}.json`);
+  return join('/tmp', `.pr-watcher-${owner}-${repo}-${pullNumber}.json`);
 }
 
 /**
