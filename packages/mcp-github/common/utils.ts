@@ -1,6 +1,5 @@
-import { importPKCS8, SignJWT } from "jose";
-import { getUserAgent } from "universal-user-agent";
 import githubAppJwt from "universal-github-app-jwt";
+import { getUserAgent } from "universal-user-agent";
 import { createGitHubError } from "./errors.js";
 import { VERSION } from "./version.js";
 

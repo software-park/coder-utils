@@ -8,43 +8,6 @@ importers:
 
   .: {}
 
-  packages/github:
-    dependencies:
-      '@modelcontextprotocol/sdk':
-        specifier: 1.15.1
-        version: 1.15.1
-      '@types/node':
-        specifier: ^22
-        version: 22.16.4
-      '@types/node-fetch':
-        specifier: ^2.6.12
-        version: 2.6.12
-      jose:
-        specifier: ^6.0.11
-        version: 6.0.11
-      node-fetch:
-        specifier: ^3.3.2
-        version: 3.3.2
-      universal-github-app-jwt:
-        specifier: ^2.2.2
-        version: 2.2.2
-      universal-user-agent:
-        specifier: ^7.0.2
-        version: 7.0.3
-      zod:
-        specifier: ^3.22.4
-        version: 3.25.76
-      zod-to-json-schema:
-        specifier: ^3.23.5
-        version: 3.24.6(zod@3.25.76)
-    devDependencies:
-      shx:
-        specifier: ^0.3.4
-        version: 0.3.4
-      typescript:
-        specifier: ^5.6.2
-        version: 5.8.3
-
   packages/mcp-github:
     dependencies:
       '@modelcontextprotocol/sdk':
@@ -489,9 +452,6 @@ packages:
 
   isexe@2.0.0:
     resolution: {integrity: sha512-RHxMLp9lnKHGHRng9QFhRCMbYAcVpn69smSGcq3f36xjgVVWThj4qqLbTLlq7Ssj8B+fIQ1EuCEGI2lKsyQeIw==}
-
-  jose@6.0.11:
-    resolution: {integrity: sha512-QxG7EaliDARm1O1S8BGakqncGT9s25bKL1WSf6/oa17Tkqwi8D2ZNglqCF+DsYF88/rV66Q/Q2mFAy697E1DUg==}
 
   json-schema-traverse@0.4.1:
     resolution: {integrity: sha512-xbbCH5dCYU5T8LcEhhuh7HJ88HXuW3qsI3Y0zOZFKfZEHcpWiHU/Jxzk629Brsab/mMiHQti9wMP+845RPe3Vg==}
@@ -1195,8 +1155,6 @@ snapshots:
   is-promise@4.0.0: {}
 
   isexe@2.0.0: {}
-
-  jose@6.0.11: {}
 
   json-schema-traverse@0.4.1: {}
 
