@@ -1,4 +1,5 @@
 import { createAppAuth } from "@octokit/auth-app";
+import { formatISO } from "date-fns";
 import { Octokit } from "octokit";
 
 interface PullRequestReview {
@@ -61,7 +62,7 @@ export const getPullRequestReviewComments = async (
 
   // since 파라미터가 있을 때만 추가
   if (since) {
-    params.since = since;
+    params.since = formatISO(since);
   }
 
   const comments = await octokit.rest.pulls.listReviewComments(params);

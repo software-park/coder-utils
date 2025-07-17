@@ -1,11 +1,11 @@
 import { CronJob } from "cron";
+import { addMinutes } from "date-fns";
 import { argv } from "process";
 import { checkAgentStatus, sendToAgent } from "./src/agent.js";
 import { formatCommentsForAgent } from "./src/format.js";
 import { getPullRequestReviewComments } from "./src/github.js";
 import { logger } from "./src/logger.js";
 import { loadLastCheckTime, saveLastCheckTime } from "./src/state-manger.js";
-import { addSeconds } from "date-fns";
 
 const owner = argv[2] || process.env.GITHUB_OWNER;
 const repo = argv[3] || process.env.GITHUB_REPO;
@@ -83,7 +83,7 @@ const job = new CronJob("*/5 * * * *", async function () {
       }
 
       // 마지막 확인 시간을 가장 최신 댓글의 시간으로 업데이트
-      const latestCommentTime = addSeconds(
+      const latestCommentTime = addMinutes(
         comments[0].created_at,
         1
       ).toISOString();

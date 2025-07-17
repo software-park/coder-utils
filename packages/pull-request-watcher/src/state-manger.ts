@@ -48,6 +48,7 @@ export function loadLastCheckTime(
 
   const initialTime = new Date().toISOString();
   logger.info(`🆕 새로운 세션을 시작합니다: ${initialTime}`);
+  saveLastCheckTime(initialTime, owner, repo, pullNumber);
   return initialTime;
 }
 
