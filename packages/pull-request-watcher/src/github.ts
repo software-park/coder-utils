@@ -1,5 +1,5 @@
 import { createAppAuth } from "@octokit/auth-app";
-import { formatISO, isAfter } from "date-fns";
+import { formatISO } from "date-fns";
 import { Octokit } from "octokit";
 
 interface PullRequestReview {
@@ -57,7 +57,7 @@ export const getPullRequestReviewComments = async (
     repo,
     pull_number: pullNumber,
     direction: "desc",
-    sort: "updated",
+    sort: "created",
   };
 
   // since 파라미터가 있을 때만 추가
@@ -67,19 +67,13 @@ export const getPullRequestReviewComments = async (
 
   const comments = await octokit.rest.pulls.listReviewComments(params);
 
-  return comments.data
-    .map((comment) => ({
-      id: comment.id,
-      body: comment.body,
-      path: comment.path,
-      diff_hunk: comment.diff_hunk,
-      user: comment.user?.login || "unknown",
-      created_at: comment.created_at,
-      updated_at: comment.updated_at,
-    }))
-    .filter((comment) => {
-      if (!since) return true;
-
-      return isAfter(new Date(comment.created_at), new Date(since));
-    });
+  return comments.data.map((comment) => ({
+    id: comment.id,
+    body: comment.body,
+    path: comment.path,
+    diff_hunk: comment.diff_hunk,
+    user: comment.user?.login || "unknown",
+    created_at: comment.created_at,
+    updated_at: comment.updated_at,
+  }));
 };

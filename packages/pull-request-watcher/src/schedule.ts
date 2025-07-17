@@ -12,7 +12,7 @@ export function schedulePullRequestCheck(
   pullNumber: number,
   agentUrl: string = "http://localhost:3284"
 ): CronJob {
-  const lastCheckTime = loadLastCheckTime(owner, repo, pullNumber);
+  let lastCheckTime = loadLastCheckTime(owner, repo, pullNumber);
 
   logger.info(`🚀 Pull Request Watcher가 시작되었습니다.`);
   logger.info(`📋 감시 대상: ${owner}/${repo} PR #${pullNumber}`);
@@ -78,12 +78,9 @@ export function schedulePullRequestCheck(
         }
 
         // 마지막 확인 시간을 가장 최신 댓글의 시간으로 업데이트
-        const latestCommentTime = addMinutes(
-          comments[0].updated_at,
-          1
-        ).toISOString();
-        saveLastCheckTime(latestCommentTime, owner, repo, pullNumber);
-        logger.info(`⏰ 마지막 확인 시간 업데이트: ${latestCommentTime}`);
+        lastCheckTime = addMinutes(comments[0].created_at, 1).toISOString();
+        saveLastCheckTime(lastCheckTime, owner, repo, pullNumber);
+        logger.info(`⏰ 마지막 확인 시간 업데이트: ${lastCheckTime}`);
       } else {
         logger.info(`💤 새로운 review comment가 없습니다.`);
       }
