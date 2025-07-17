@@ -5,28 +5,28 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
+import fetch from 'node-fetch';
 import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
-import fetch, { Request, Response } from 'node-fetch';
 
-import * as repository from './operations/repository.js';
-import * as files from './operations/files.js';
-import * as issues from './operations/issues.js';
-import * as pulls from './operations/pulls.js';
-import * as branches from './operations/branches.js';
-import * as search from './operations/search.js';
-import * as commits from './operations/commits.js';
 import {
-  GitHubError,
-  GitHubValidationError,
-  GitHubResourceNotFoundError,
   GitHubAuthenticationError,
+  GitHubConflictError,
+  GitHubError,
   GitHubPermissionError,
   GitHubRateLimitError,
-  GitHubConflictError,
+  GitHubResourceNotFoundError,
+  GitHubValidationError,
   isGitHubError,
 } from './common/errors.js';
 import { VERSION } from "./common/version.js";
+import * as branches from './operations/branches.js';
+import * as commits from './operations/commits.js';
+import * as files from './operations/files.js';
+import * as issues from './operations/issues.js';
+import * as pulls from './operations/pulls.js';
+import * as repository from './operations/repository.js';
+import * as search from './operations/search.js';
 
 // If fetch doesn't exist in global scope, add it
 if (!globalThis.fetch) {

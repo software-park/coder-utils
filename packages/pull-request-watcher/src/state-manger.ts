@@ -21,6 +21,15 @@ function getStateFilePath(
   return path.join("/tmp", `.pr-watcher-${owner}-${repo}-${pullNumber}.json`);
 }
 
+export function hasStateFile(
+  owner: string,
+  repo: string,
+  pullNumber: number
+): boolean {
+  const stateFilePath = getStateFilePath(owner, repo, pullNumber);
+  return existsSync(stateFilePath);
+}
+
 /**
  * 마지막 확인 시간을 파일에서 로드하거나 현재 시간으로 초기화합니다.
  */

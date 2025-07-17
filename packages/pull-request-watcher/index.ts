@@ -1,102 +1,160 @@
-import { CronJob } from "cron";
-import { addMinutes } from "date-fns";
-import { argv } from "process";
-import { checkAgentStatus, sendToAgent } from "./src/agent.js";
-import { formatCommentsForAgent } from "./src/format.js";
-import { getPullRequestReviewComments } from "./src/github.js";
-import { logger } from "./src/logger.js";
-import { loadLastCheckTime, saveLastCheckTime } from "./src/state-manger.js";
+#!/usr/bin/env node
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { schedulePullRequestCheck } from "./src/schedule.js";
 
-const owner = argv[2] || process.env.GITHUB_OWNER;
-const repo = argv[3] || process.env.GITHUB_REPO;
-const pullNumber = parseInt(argv[4] || process.env.PULL_NUMBER || "");
+import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import {
+  CallToolRequestSchema,
+  ListToolsRequestSchema,
+} from "@modelcontextprotocol/sdk/types.js";
+import { CronJob } from "cron";
+import fetch from "node-fetch";
+import { z } from "zod";
+import { zodToJsonSchema } from "zod-to-json-schema";
+
 const agentUrl = "http://localhost:3284";
 
-if (!owner || !repo || isNaN(pullNumber)) {
-  logger.error("Usage: node index.js <owner> <repo> <pullNumber>");
-  process.exit(1);
+// If fetch doesn't exist in global scope, add it
+if (!globalThis.fetch) {
+  globalThis.fetch = fetch as unknown as typeof global.fetch;
 }
 
-const lastCheckTime = loadLastCheckTime(owner, repo, pullNumber);
+const server = new Server(
+  {
+    name: "pull-request-watcher",
+    version: "0.1.0",
+  },
+  {
+    capabilities: {
+      tools: {},
+    },
+  }
+);
 
-logger.info(`🚀 Pull Request Watcher가 시작되었습니다.`);
-logger.info(`📋 감시 대상: ${owner}/${repo} PR #${pullNumber}`);
-logger.info(`🤖 Agent URL: ${agentUrl}`);
-logger.info(`⏰ 5분마다 새로운 review comment를 확인합니다.`);
-logger.info(`📅 시작 시간: ${lastCheckTime}`);
+server.setRequestHandler(ListToolsRequestSchema, async () => {
+  return {
+    tools: [
+      {
+        name: "start_watch",
+        description: "Start pull request watche scheduler",
+        inputSchema: zodToJsonSchema(
+          z.object({
+            owner: z.string().describe("Repository owner"),
+            repo: z.string().describe("Repository name"),
+            pullNumber: z.number().describe("Pull request number"),
+          })
+        ),
+      },
+    ],
+  };
+});
 
-const job = new CronJob("*/5 * * * *", async function () {
+// 실행 중인 스케줄러를 추적하는 Map
+const activeSchedulers = new Map<string, CronJob>();
+
+// 스케줄러 키 생성 함수
+function getSchedulerKey(
+  owner: string,
+  repo: string,
+  pullNumber: number
+): string {
+  return `${owner}/${repo}/pr/${pullNumber}`;
+}
+
+server.setRequestHandler(CallToolRequestSchema, async (request) => {
   try {
-    logger.info(
-      `\n🔍 새로운 review comment 확인 중... (${new Date().toISOString()})`
-    );
-
-    // Agent 상태 확인
-    const { status, isRunning } = await checkAgentStatus(agentUrl);
-
-    if (isRunning) {
-      logger.warn(
-        `⏸️ Agent가 현재 작업 중입니다 (상태: ${status}). 이번 주기를 건너뜁니다.`
-      );
-      return;
+    if (!request.params.arguments) {
+      throw new Error("Arguments are required");
     }
 
-    // lastCheckTime 이후의 새로운 comment들을 가져옴
-    const comments = await getPullRequestReviewComments(
-      owner,
-      repo,
-      lastCheckTime,
-      pullNumber
-    );
+    switch (request.params.name) {
+      case "start_watch": {
+        const args = z
+          .object({
+            owner: z.string(),
+            repo: z.string(),
+            pullNumber: z.number(),
+          })
+          .parse(request.params.arguments);
 
-    if (comments.length > 0) {
-      logger.info(
-        `✨ ${comments.length}개의 새로운 review comment를 발견했습니다!`
-      );
-
-      // 각 댓글을 출력
-      comments.forEach((comment, index) => {
-        logger.info(`\n📝 Comment ${index + 1}:`);
-        logger.info(`   👤 작성자: ${comment.user}`);
-        logger.info(`   📂 파일: ${comment.path}`);
-        logger.info(`   💬 내용: ${comment.body}`);
-        logger.info(`   📅 작성 시간: ${comment.created_at}`);
-        logger.info(`   🔗 diff: ${comment.diff_hunk}`);
-      });
-
-      // 모든 댓글을 한번에 Agent에게 전달
-      logger.info(`\n🤖 모든 댓글을 Agent에게 전달 중...`);
-      const formattedMessage = formatCommentsForAgent(
-        comments,
-        owner,
-        repo,
-        pullNumber
-      );
-      const success = await sendToAgent(formattedMessage, agentUrl);
-
-      if (success) {
-        logger.info(
-          `✅ ${comments.length}개의 댓글이 Agent에게 성공적으로 전달되었습니다.`
+        const schedulerKey = getSchedulerKey(
+          args.owner,
+          args.repo,
+          args.pullNumber
         );
-      } else {
-        logger.error(`❌ Agent 전달 실패`);
-      }
 
-      // 마지막 확인 시간을 가장 최신 댓글의 시간으로 업데이트
-      const latestCommentTime = addMinutes(
-        comments[0].created_at,
-        1
-      ).toISOString();
-      saveLastCheckTime(latestCommentTime, owner, repo, pullNumber);
-      logger.info(`⏰ 마지막 확인 시간 업데이트: ${latestCommentTime}`);
-    } else {
-      logger.info(`💤 새로운 review comment가 없습니다.`);
+        // 이미 실행 중인 스케줄러가 있는지 확인
+        if (activeSchedulers.has(schedulerKey)) {
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Pull request watcher for ${schedulerKey} is already running. Use stop_watch to stop it first.`,
+              },
+            ],
+          };
+        }
+
+        // Start the pull request watcher
+        const job = schedulePullRequestCheck(
+          args.owner,
+          args.repo,
+          args.pullNumber,
+          agentUrl
+        );
+
+        // 활성 스케줄러 맵에 추가
+        activeSchedulers.set(schedulerKey, job);
+
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Pull request watcher started for ${schedulerKey}`,
+            },
+          ],
+        };
+      }
+      default:
+        throw new Error(`Unknown tool: ${request.params.name}`);
     }
   } catch (error) {
-    logger.error(`❌ 오류 발생:`, error);
+    if (error instanceof z.ZodError) {
+      throw new Error(`Invalid input: ${JSON.stringify(error.errors)}`);
+    }
+
+    throw error;
   }
 });
 
-logger.info(`\n⏰ Cron job이 시작됩니다. (Ctrl+C로 종료)`);
+async function runServer() {
+  const transport = new StdioServerTransport();
+  await server.connect(transport);
+  console.log("Pull request watcher MCP Server running on stdio");
+}
 
-job.start();
+// 프로세스 종료 시 모든 활성 스케줄러 정리
+process.on("SIGINT", () => {
+  console.log("\n📦 Shutting down pull request watcher...");
+  activeSchedulers.forEach((job, key) => {
+    console.log(`🛑 Stopping scheduler for ${key}`);
+    job.stop();
+  });
+  activeSchedulers.clear();
+  process.exit(0);
+});
+
+process.on("SIGTERM", () => {
+  console.log("\n📦 Shutting down pull request watcher...");
+  activeSchedulers.forEach((job, key) => {
+    console.log(`🛑 Stopping scheduler for ${key}`);
+    job.stop();
+  });
+  activeSchedulers.clear();
+  process.exit(0);
+});
+
+runServer().catch((error) => {
+  console.error("Fatal error in main():", error);
+  process.exit(1);
+});

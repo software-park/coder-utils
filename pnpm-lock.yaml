@@ -44,6 +44,9 @@ importers:
 
   packages/pull-request-watcher:
     dependencies:
+      '@modelcontextprotocol/sdk':
+        specifier: 1.15.1
+        version: 1.15.1
       '@octokit/auth-app':
         specifier: ^8.0.2
         version: 8.0.2
