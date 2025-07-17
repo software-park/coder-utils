@@ -5,6 +5,7 @@ import { formatCommentsForAgent } from "./src/format.js";
 import { getPullRequestReviewComments } from "./src/github.js";
 import { logger } from "./src/logger.js";
 import { loadLastCheckTime, saveLastCheckTime } from "./src/state-manger.js";
+import { addSeconds } from "date-fns";
 
 const owner = argv[2] || process.env.GITHUB_OWNER;
 const repo = argv[3] || process.env.GITHUB_REPO;
@@ -16,7 +17,7 @@ if (!owner || !repo || isNaN(pullNumber)) {
   process.exit(1);
 }
 
-let lastCheckTime = loadLastCheckTime(owner, repo, pullNumber);
+const lastCheckTime = loadLastCheckTime(owner, repo, pullNumber);
 
 logger.info(`🚀 Pull Request Watcher가 시작되었습니다.`);
 logger.info(`📋 감시 대상: ${owner}/${repo} PR #${pullNumber}`);
@@ -82,10 +83,12 @@ const job = new CronJob("*/5 * * * *", async function () {
       }
 
       // 마지막 확인 시간을 가장 최신 댓글의 시간으로 업데이트
-      const latestCommentTime = comments[0].created_at;
-      lastCheckTime = latestCommentTime;
-      saveLastCheckTime(lastCheckTime, owner, repo, pullNumber);
-      logger.info(`⏰ 마지막 확인 시간 업데이트: ${lastCheckTime}`);
+      const latestCommentTime = addSeconds(
+        comments[0].created_at,
+        1
+      ).toISOString();
+      saveLastCheckTime(latestCommentTime, owner, repo, pullNumber);
+      logger.info(`⏰ 마지막 확인 시간 업데이트: ${latestCommentTime}`);
     } else {
       logger.info(`💤 새로운 review comment가 없습니다.`);
     }
