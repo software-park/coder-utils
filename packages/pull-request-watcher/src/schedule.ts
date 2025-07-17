@@ -79,7 +79,7 @@ export function schedulePullRequestCheck(
 
         // 마지막 확인 시간을 가장 최신 댓글의 시간으로 업데이트
         const latestCommentTime = addMinutes(
-          comments[0].created_at,
+          comments[0].updated_at,
           1
         ).toISOString();
         saveLastCheckTime(latestCommentTime, owner, repo, pullNumber);
